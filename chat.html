@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>sample-chat-app</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 16px Helvetica, Arial; }
+      h2 {padding: 10px}
+      .form { background: #001; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      .form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      .form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      ul { list-style-type: none; margin: 0; padding: 0; }
+      ul li { padding: 5px 10px; }
+      ul { margin-bottom: 10px }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <header>
+      <h2>サンプルチャットアプリ</h2>
+    </header>
+    <hr>
+    <main id="chat">
+      <ul v-for="message in messages">
+        <li>{{message}}</li>
+      </ul>
+      <div class="form">
+        <input v-model="chatMessage">
+        <button v-on:click="postMessage">送信</button>
+      </div>
+    </main>
+  </body>
+  <script>
+    var socket = io();
+    var app = new Vue({
+      el: '#chat',
+      data: {
+        chatMessage: '',
+        messages: []
+      },
+      methods: {
+        // 送信ボタンが押されたら、クライアントからサーバーにメッセージを送信
+        postMessage: function() {
+          socket.emit('c2s-msg', this.chatMessage);
+          this.chatMessage = '';
+          return false;
+        }
+      },
+    })
+
+    // サーバーがメッセージをemitしたら、クライアント側のリストにメッセージを追加する
+    socket.on('s2c-msg', function(msg) {
+      console.log(msg);
+      app.messages.push(msg);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    // 元々あるメッセージを表示する
+    socket.on('init-chat', function(messages) {
+      app.messages = messages;
+    });
+  </script>
+</html>
